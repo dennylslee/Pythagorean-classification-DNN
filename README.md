@@ -70,7 +70,7 @@ df_test = df_train.tail(dataset_rawsize)  		# select the bottom half for testing
 
 A 5000 data point training set looks like this below. The left hand diagram is the positive ground truth and the right hand diagram are the superimposed negative ground truth.  The perturbed dataset (dfnoise) is further separated to the upper set and lower set (red and blue dots respectively).  The upper set is slightly above the positive ground manifold and the lower set is slightly below the manifold. 
 
-![image of raw ts](https://github.com/dennylslee/time-series-LSTM/blob/master/cos-rawTS.png)
+![image of 5000 points training set](https://github.com/dennylslee/Pythagorean-classification-DNN/blob/master/5000TrainingSetVis.png)
 
 ## Basic DNN 
 
