@@ -18,59 +18,81 @@ A good academic reference to the subject of optimal% of negative samples in perf
 
 This project is built using python and the Keras framework. 
 
-## Time series generation
+## Preparing training data
 
-The raw time series is created 4 raw components (effectively modulation):
-1. a so-called carrier cosine wave 
-2. a low frequncy sine wave modulation
-3. a slow rising parabola curve 
-4. guassian noise added on top at each timestep
-
-The main code construct:
+The training data are formed from 3 dataframes.  dfgood are positive ground truth data. Each tuple is explicitly calculated to represent the 3 edges of a right angle triangle.  dfnoise is the dataframe that are perturbed from dfgood and dfrand are just random tuples that fill the normalized data range (which is hard coded to 1000 for the two short edges). The concatenated data set are scrambled and split into two halves: one for DNN training and one for testing.  
 
 ```python
-T
+# ------------------ FORM THE TRAINING SET -----------------------------------------
+# clean up the original dataframe to contain only  the 3 sides of the triangle
+# label equals one means positive example
+dfgood = df.copy()
+dfgood['label']=np.ones(dataset_size)
+dfgood.label = dfgood.label.astype(int)
+dfgood['type'] = 'RightTri'
+
+# create new dataframe with the same two sides as the good one. 
+# the hypothenous is pertubed with some guassian noise
+dfnoise = dfgood.copy()  # use .copy to not affect the original data frame
+dfnoise.h = dfnoise.h + np.random.normal(norm_mu,norm_sigma,len(df))
+dfnoise.a = dfnoise.a + np.random.normal(norm_mu,norm_sigma,len(df))
+dfnoise.b = dfnoise.b + np.random.normal(norm_mu,norm_sigma,len(df))
+# indicate the label as negative example (zero)
+dfnoise.label = np.zeros(dataset_size).astype(int)
+dfnoise['type'] = 'noise'
+
+# create another dataframe with another random tuple as negative example
+a1 = np.random.random(dataset_size)
+b1 = np.random.random(dataset_size)
+h1 = np.random.random(dataset_size)
+l = np.zeros(dataset_size)
+dfrand = pd.DataFrame({"a": a1, "b": b1, "h":h1,  "label":l}, index=index)
+dfrand.a = dfrand.a * Normalrange
+dfrand.b = dfrand.b * Normalrange
+dfrand.h = dfrand.h * Normalrange * 1.414  # adjust for the height spread
+dfrand.a = dfrand.a.astype(int)
+dfrand.b = dfrand.b.astype(int)
+dfrand['type'] = 'rand'
+
+# Concat all 3 (or 2) dataframes into a training set
+if add_rand:
+	df_train = pd.concat([dfgood,dfnoise, dfrand])  
+else:
+	df_train = pd.concat([dfgood,dfnoise])
+df_train = df_train.sample(frac=1) 				# scramble all the rows
+df_train = df_train.head(dataset_rawsize) 		# select the top half for training
+df_test = df_train.tail(dataset_rawsize)  		# select the bottom half for testing
+
 ```
 
-The raw waveform (time series) looks like this:
+
+## Training dataset visualization
+
+A 5000 data point training set looks like this below. The left hand diagram is the positive ground truth and the right hand diagram are the superimposed negative ground truth.  The perturbed dataset (dfnoise) is further separated to the upper set and lower set (red and blue dots respectively).  The upper set is slightly above the positive ground manifold and the lower set is slightly below the manifold. 
 
 ![image of raw ts](https://github.com/dennylslee/time-series-LSTM/blob/master/cos-rawTS.png)
 
-## LSTM prediction
+## Basic DNN 
 
-A single layer LSTM is used for performing the prediction.  The internal state (vector) size of the cell and hidden state is set as 10. The look_back variable controls the size of the input vector into the RNN(LSTM).  
+A two layer simple DNN is constructed using Keras. The input dimension is obviously set to 3 for the tuple input format.  No dropout was used since no signficant overfitting was observed given the simplicity of the problem.
 
-Sensitivity analysis options:
-1. The training size proportion
-2. Look back (i.e. the timestep of the input vector) 
-3. LSTM unit which is the internal vector size of the cell (memory) and hidden state 
 
 ```python
-# split into train and test sets
-# control the proportion of training set here
-train_size = int(len(dataset) * 0.02)
-test_size = len(dataset) - train_size
-train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
+# ------------------ PREPARE DATA FOR DNN INPUT -----------------------------------------
+# split into input (X) and output (Y) variables
+X = df_train[['a','b', 'h']].values 		#convert dataframe to np array for Keras
+Y = df_train['label'].tolist() 				#convert pd series to np array for Keras
 
-# reshape into X=t and Y=t+1
-# look_back dictates the time steps and the hidden layer; can cause overfitting error when it's too large
-look_back = 5
-trainX, trainY = create_dataset(train, look_back)
-testX, testY = create_dataset(test, look_back)
- 
-# reshape input to be [samples, time steps, features]
-# NOTE: time steps and features are reversed from example given
-trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1],1))
-testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1],1))
-
-# create and fit the LSTM network
-# single hidden layer (timestep is one) and cell states
-# The "unit" value in this case is the size of the cell state and the size of the hidden state
+# create model
 model = Sequential()
-model.add(LSTM(10, input_shape=(look_back,1))) 	# NOTE: time steps and features are reversed from example given
-model.add(Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=50, batch_size=1, verbose=2)
+model.add(Dense(num_firstlayer, input_dim=3, kernel_initializer='uniform', activation='relu'))
+model.add(Dense(num_secondlayer, kernel_initializer='uniform', activation='relu'))
+model.add(Dense(1, kernel_initializer='uniform', activation='sigmoid'))
+# Compile model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+# Fit the model
+model.fit(X, Y, epochs = epochs, batch_size= batch_size, validation_split = train_test_split, verbose=2)
+
 ```
 
 ## Results from varying training size
