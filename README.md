@@ -74,7 +74,7 @@ A 5000 data point training set looks like this below. The left hand diagram is t
 
 ## Basic DNN 
 
-A two layer simple DNN is constructed using Keras. The input dimension is obviously set to 3 for the tuple input format.  No dropout was used since no signficant overfitting was observed given the simplicity of the problem.
+A three layer simple DNN is constructed using Keras. The input dimension is obviously set to 3 for the tuple input format.  No dropout was used since no signficant overfitting was observed given the simplicity of the problem.
 
 
 ```python
@@ -95,19 +95,86 @@ model.fit(X, Y, epochs = epochs, batch_size= batch_size, validation_split = trai
 
 ```
 
-## Results from varying training size
+## Sensitivity to DNN size 
 
-The predition results are overlayed on top of the raw time series.  The orange colored line is the training set and the green colored line is the testing set. The presence of a larger amount of training data minimizes the error (root mean square error) as the LSTM can fit the model from a more representative sequence. 
+First we tried to understand the sensitivity to the DNN size of neurons varying the layer number of neurons from 40/20 to 10/5.  You can see below that the F1-score drop moderately from 0.76 to 0.70
 
-20 percent for training:
+```python
+# control how spread the noise is
+norm_mu,norm_sigma = 0, 10
+# DNN control 
+num_firstlayer = 40 		# varies to 10
+num_secondlayer = 20		# varies to 5
+epochs = 50
+train_test_split = 0.25		# pct left for test validation. Keras use the latter port of dataset
+batch_size = 10
+```
 
-![image of 20pct training](https://github.com/dennylslee/time-series-LSTM/blob/master/cos-testresult-20pct-training.png)
+The prediction performance result of a larger DNN (40/20)
 
-10 precent for training:
+------Prediction Performance of Mixed (Noise+Random) Data----------- 
 
-![image of 10pct training](https://github.com/dennylslee/time-series-LSTM/blob/master/cos-testresult-10pct-training.png)
+             precision    recall  f1-score   support
 
-2 percent for training:
+    class 0       0.86      0.75      0.80      3329
+    class 1       0.60      0.77      0.68      1671
 
-![image of 2pct training](https://github.com/dennylslee/time-series-LSTM/blob/master/cos-testresult-2pct-training.png)
+avg / total       0.78      0.75      0.76      5000
 
+The prediction performance result of a larger DNN (40/20)
+
+------Prediction Performance of Mixed (Noise+Random) Data----------- 
+
+
+
+             precision    recall  f1-score   support
+
+    class 0       1.00      0.55      0.71      3332
+    class 1       0.53      1.00      0.69      1668
+
+avg / total       0.84      0.70      0.70      5000
+
+## Sentivity to negative and volume of training data 
+
+We found that the results is quite highly dependent on the presence of negative data and amount of training data overall.  We hold the DNN size constant as per the first setup above (40/20 neurons), but we increase the training size to 50000 (note that 25% is used for in-training cross validation purposes).
+
+------Prediction Performance of Mixed (Noise+Random) Data----------- 
+
+TP 16704 FP 4936 TN 28360 FN 0 
+
+             precision    recall  f1-score   support
+
+    class 0       1.00      0.85      0.92     33296
+    class 1       0.77      1.00      0.87     16704
+
+avg / total       0.92      0.90      0.90     50000
+
+------Prediction Performance of Noise & Positive Data------------- 
+
+TP 16704 FP 4805 TN 11866 FN 0 
+
+             precision    recall  f1-score   support
+
+    class 0       1.00      0.71      0.83     16671
+    class 1       0.78      1.00      0.87     16704
+
+avg / total       0.89      0.86      0.85     33375
+
+------Prediction Performance of Random & Positive Data------------- 
+
+TP 16704 FP 131 TN 16494 FN 0 
+
+             precision    recall  f1-score   support
+
+    class 0       1.00      0.99      1.00     16625
+    class 1       0.99      1.00      1.00     16704
+
+avg / total       1.00      1.00      1.00     33329
+
+
+## Interesting observations
+
+Three key observations:
+1. Presence of negative samples help the overall OCC accuracy.
+2. Of course the perturbed negative are much harder to classify since it is close to the positive manifold
+3. The presence of the random negative seems to help improve the classification of the perturbed negatives.
