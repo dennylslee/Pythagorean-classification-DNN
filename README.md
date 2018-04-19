@@ -110,29 +110,29 @@ train_test_split = 0.25		# pct left for test validation. Keras use the latter po
 batch_size = 10
 ```
 
-The prediction performance result of a larger DNN (40/20)
+### The prediction performance result of a larger DNN (40/20)
 
 ------Prediction Performance of Mixed (Noise+Random) Data----------- 
 
+```
              precision    recall  f1-score   support
-
     class 0       0.86      0.75      0.80      3329
     class 1       0.60      0.77      0.68      1671
 
 avg / total       0.78      0.75      0.76      5000
+```
 
-The prediction performance result of a larger DNN (40/20)
+### The prediction performance result of a larger DNN (40/20)
 
 ------Prediction Performance of Mixed (Noise+Random) Data----------- 
 
-
-
+```
              precision    recall  f1-score   support
-
     class 0       1.00      0.55      0.71      3332
     class 1       0.53      1.00      0.69      1668
 
 avg / total       0.84      0.70      0.70      5000
+```
 
 ## Sentivity to negative and volume of training data 
 
@@ -142,36 +142,42 @@ We found that the results is quite highly dependent on the presence of negative 
 
 TP 16704 FP 4936 TN 28360 FN 0 
 
-             precision    recall  f1-score   support
+```
+               precision    recall  f1-score   support
 
     class 0       1.00      0.85      0.92     33296
     class 1       0.77      1.00      0.87     16704
 
 avg / total       0.92      0.90      0.90     50000
+```
+  
 
 ------Prediction Performance of Noise & Positive Data------------- 
 
 TP 16704 FP 4805 TN 11866 FN 0 
 
-             precision    recall  f1-score   support
+```
+               precision    recall  f1-score   support
 
     class 0       1.00      0.71      0.83     16671
     class 1       0.78      1.00      0.87     16704
 
 avg / total       0.89      0.86      0.85     33375
-
+```
+  
 ------Prediction Performance of Random & Positive Data------------- 
 
 TP 16704 FP 131 TN 16494 FN 0 
 
-             precision    recall  f1-score   support
+```
+               precision    recall  f1-score   support
 
     class 0       1.00      0.99      1.00     16625
     class 1       0.99      1.00      1.00     16704
 
 avg / total       1.00      1.00      1.00     33329
-
-
+```
+ 
 ## Interesting observations
 
 Three key observations:
